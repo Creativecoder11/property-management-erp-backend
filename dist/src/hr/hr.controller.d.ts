@@ -3,12 +3,54 @@ export declare class HrController {
     private service;
     constructor(service: HrService);
     stats(req: any): Promise<{
-        totalEmployees: any;
-        activeEmployees: any;
-        presentToday: any;
-        pendingLeaves: any;
+        totalEmployees: number;
+        activeEmployees: number;
+        presentToday: number;
+        pendingLeaves: number;
     }>;
-    leaves(req: any, q: any): Promise<any>;
-    createLeave(req: any, dto: any): Promise<any>;
-    updateLeave(id: string, dto: any): Promise<any>;
+    leaves(req: any, q: any): Promise<({
+        employee: {
+            name: string;
+            empId: string;
+            department: string | null;
+        };
+    } & {
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        type: import(".prisma/client").$Enums.LeaveType;
+        status: import(".prisma/client").$Enums.LeaveStatus;
+        startDate: Date;
+        approvedBy: string | null;
+        endDate: Date;
+        days: number;
+        employeeId: string;
+        reason: string | null;
+    })[]>;
+    createLeave(req: any, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        type: import(".prisma/client").$Enums.LeaveType;
+        status: import(".prisma/client").$Enums.LeaveStatus;
+        startDate: Date;
+        approvedBy: string | null;
+        endDate: Date;
+        days: number;
+        employeeId: string;
+        reason: string | null;
+    }>;
+    updateLeave(id: string, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        type: import(".prisma/client").$Enums.LeaveType;
+        status: import(".prisma/client").$Enums.LeaveStatus;
+        startDate: Date;
+        approvedBy: string | null;
+        endDate: Date;
+        days: number;
+        employeeId: string;
+        reason: string | null;
+    }>;
 }
