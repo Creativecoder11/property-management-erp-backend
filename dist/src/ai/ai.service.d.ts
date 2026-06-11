@@ -12,13 +12,13 @@ export declare class AiService {
             impact: string;
         }[];
         metrics: {
-            totalRevenue: number;
-            collected: number;
-            expenses: number;
+            totalRevenue: any;
+            collected: any;
+            expenses: any;
             collectionRate: string;
-            overdueInstallments: number;
+            overdueInstallments: any;
             netProfit: number;
-            totalBookings: number;
+            totalBookings: any;
         };
     }>;
     getForecast(companyId: string): Promise<{
@@ -29,15 +29,7 @@ export declare class AiService {
         }[];
     }>;
     getRiskAnalysis(companyId: string): Promise<{
-        risks: {
-            projectId: string;
-            projectName: string;
-            progressPct: number;
-            budgetUsagePct: number;
-            isDelayed: boolean | null;
-            riskLevel: string;
-            message: string;
-        }[];
+        risks: any[];
     }>;
     chat(companyId: string, message: string): Promise<{
         reply: any;

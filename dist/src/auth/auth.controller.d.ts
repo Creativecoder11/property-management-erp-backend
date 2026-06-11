@@ -7,51 +7,13 @@ export declare class AuthController {
         accessToken: string;
         refreshToken: string;
         user: any;
-        company: {
-            id: string;
-            slug: string;
-            name: string;
-            email: string;
-            phone: string | null;
-            logo: string | null;
-            address: string | null;
-            website: string | null;
-            taxId: string | null;
-            currency: string;
-            timezone: string;
-            isActive: boolean;
-            trialEndsAt: Date | null;
-            subscriptionId: string | null;
-            plan: import(".prisma/client").$Enums.Plan;
-            createdAt: Date;
-            updatedAt: Date;
-            deletedAt: Date | null;
-        };
+        company: any;
     }>;
     login(dto: LoginDto): Promise<{
         accessToken: string;
         refreshToken: string;
         user: any;
-        company: {
-            id: string;
-            slug: string;
-            name: string;
-            email: string;
-            phone: string | null;
-            logo: string | null;
-            address: string | null;
-            website: string | null;
-            taxId: string | null;
-            currency: string;
-            timezone: string;
-            isActive: boolean;
-            trialEndsAt: Date | null;
-            subscriptionId: string | null;
-            plan: import(".prisma/client").$Enums.Plan;
-            createdAt: Date;
-            updatedAt: Date;
-            deletedAt: Date | null;
-        };
+        company: any;
     }>;
     refresh(dto: RefreshTokenDto, req: any): Promise<{
         accessToken: string;

@@ -10,13 +10,13 @@ export declare class AiController {
             impact: string;
         }[];
         metrics: {
-            totalRevenue: number;
-            collected: number;
-            expenses: number;
+            totalRevenue: any;
+            collected: any;
+            expenses: any;
             collectionRate: string;
-            overdueInstallments: number;
+            overdueInstallments: any;
             netProfit: number;
-            totalBookings: number;
+            totalBookings: any;
         };
     }>;
     forecast(req: any): Promise<{
@@ -27,15 +27,7 @@ export declare class AiController {
         }[];
     }>;
     risk(req: any): Promise<{
-        risks: {
-            projectId: string;
-            projectName: string;
-            progressPct: number;
-            budgetUsagePct: number;
-            isDelayed: boolean | null;
-            riskLevel: string;
-            message: string;
-        }[];
+        risks: any[];
     }>;
     chat(req: any, body: {
         message: string;
