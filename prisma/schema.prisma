@@ -1,0 +1,1039 @@
+// BuildEstate ERP - Complete Prisma Schema
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// MULTI-TENANT CORE
+// ─────────────────────────────────────────────
+
+model Company {
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  email           String
+  phone           String?
+  logo            String?
+  address         String?
+  website         String?
+  taxId           String?
+  currency        String   @default("BDT")
+  timezone        String   @default("Asia/Dhaka")
+  isActive        Boolean  @default(true)
+  trialEndsAt     DateTime?
+  subscriptionId  String?
+  plan            Plan     @default(STARTER)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  users           User[]
+  projects        Project[]
+  leads           Lead[]
+  clients         Client[]
+  employees       Employee[]
+  expenses        Expense[]
+  vendors         Vendor[]
+  notifications   Notification[]
+  auditLogs       AuditLog[]
+  subscriptions   Subscription[]
+  documents       Document[]
+
+  @@index([slug])
+}
+
+enum Plan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+model Subscription {
+  id          String             @id @default(cuid())
+  companyId   String
+  plan        Plan
+  status      SubscriptionStatus @default(ACTIVE)
+  amount      Float
+  currency    String             @default("USD")
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  company     Company            @relation(fields: [companyId], references: [id])
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  TRIAL
+}
+
+// ─────────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────────
+
+model User {
+  id              String    @id @default(cuid())
+  companyId       String
+  email           String
+  password        String
+  firstName       String
+  lastName        String
+  phone           String?
+  avatar          String?
+  role            Role      @default(STAFF)
+  isActive        Boolean   @default(true)
+  isVerified      Boolean   @default(false)
+  twoFactorSecret String?
+  twoFactorEnabled Boolean  @default(false)
+  lastLoginAt     DateTime?
+  refreshToken    String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime?
+
+  company         Company   @relation(fields: [companyId], references: [id])
+  sessions        Session[]
+  auditLogs       AuditLog[]
+  assignedLeads   Lead[]    @relation("AssignedLeads")
+  leadActivities  LeadActivity[]
+  followUps       FollowUp[]
+  notifications   Notification[]
+
+  @@unique([companyId, email])
+  @@index([companyId])
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  MANAGER
+  SALES
+  ACCOUNTS
+  HR
+  CONSTRUCTION
+  CLIENT
+  STAFF
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  ipAddress String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  email     String
+  code      String
+  type      OtpType
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+enum OtpType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+  TWO_FACTOR
+}
+
+// ─────────────────────────────────────────────
+// PROJECTS & INVENTORY
+// ─────────────────────────────────────────────
+
+model Project {
+  id              String        @id @default(cuid())
+  companyId       String
+  name            String
+  code            String
+  description     String?
+  type            ProjectType   @default(RESIDENTIAL)
+  status          ProjectStatus @default(PLANNING)
+  landArea        Float?
+  totalUnits      Int           @default(0)
+  startDate       DateTime?
+  expectedEnd     DateTime?
+  actualEnd       DateTime?
+  budget          Float         @default(0)
+  location        String?
+  latitude        Float?
+  longitude       Float?
+  coverImage      String?
+  progressPct     Float         @default(0)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  company         Company       @relation(fields: [companyId], references: [id])
+  towers          Tower[]
+  progressReports ProgressReport[]
+  bookings        Booking[]
+  documents       Document[]
+  expenses        Expense[]
+  workOrders      WorkOrder[]
+
+  @@index([companyId])
+}
+
+enum ProjectType {
+  RESIDENTIAL
+  COMMERCIAL
+  MIXED_USE
+  PLOT
+}
+
+enum ProjectStatus {
+  PLANNING
+  APPROVED
+  UNDER_CONSTRUCTION
+  COMPLETED
+  ON_HOLD
+}
+
+model Tower {
+  id          String   @id @default(cuid())
+  projectId   String
+  name        String
+  totalFloors Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  project     Project  @relation(fields: [projectId], references: [id])
+  floors      Floor[]
+
+  @@index([projectId])
+}
+
+model Floor {
+  id        String   @id @default(cuid())
+  towerId   String
+  floorNo   Int
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tower     Tower    @relation(fields: [towerId], references: [id])
+  units     Unit[]
+
+  @@index([towerId])
+}
+
+model Unit {
+  id              String     @id @default(cuid())
+  floorId         String
+  unitNo          String
+  type            UnitType   @default(APARTMENT)
+  status          UnitStatus @default(AVAILABLE)
+  sizeSqft        Float
+  bedrooms        Int        @default(2)
+  bathrooms       Int        @default(2)
+  facing          String?
+  basePrice       Float
+  currentPrice    Float
+  floorPlanImage  String?
+  hasParking      Boolean    @default(false)
+  parkingNo       String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  floor           Floor      @relation(fields: [floorId], references: [id])
+  bookings        Booking[]
+
+  @@index([floorId])
+}
+
+enum UnitType {
+  APARTMENT
+  PENTHOUSE
+  STUDIO
+  DUPLEX
+  COMMERCIAL
+  PLOT
+}
+
+enum UnitStatus {
+  AVAILABLE
+  RESERVED
+  BOOKED
+  SOLD
+  HANDOVER
+  BLOCKED
+}
+
+// ─────────────────────────────────────────────
+// CRM & LEADS
+// ─────────────────────────────────────────────
+
+model Lead {
+  id              String         @id @default(cuid())
+  companyId       String
+  assignedToId    String?
+  name            String
+  email           String?
+  phone           String
+  source          LeadSource     @default(DIRECT)
+  stage           LeadStage      @default(NEW)
+  priority        LeadPriority   @default(MEDIUM)
+  score           Int            @default(0)
+  interestedIn    String?
+  budget          Float?
+  budgetMin       Float?
+  budgetMax       Float?
+  locationPref    String?
+  propertyType    String?
+  bedrooms        Int?
+  notes           String?
+  lostReason      String?
+  tags            String[]
+  lastContactAt   DateTime?
+  followUpAt      DateTime?
+  convertedAt     DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  company         Company        @relation(fields: [companyId], references: [id])
+  assignedTo      User?          @relation("AssignedLeads", fields: [assignedToId], references: [id])
+  activities      LeadActivity[]
+  followUps       FollowUp[]
+  client          Client?
+
+  @@index([companyId])
+  @@index([companyId, stage])
+  @@index([companyId, assignedToId])
+}
+
+enum LeadPriority {
+  LOW
+  MEDIUM
+  HIGH
+  HOT
+}
+
+enum LeadSource {
+  DIRECT
+  FACEBOOK
+  INSTAGRAM
+  WEBSITE
+  REFERRAL
+  WHATSAPP
+  CALL
+  WALK_IN
+  NEWSPAPER
+  BILLBOARD
+  OTHER
+}
+
+enum LeadStage {
+  NEW
+  CONTACTED
+  QUALIFIED
+  SITE_VISIT_SCHEDULED
+  SITE_VISIT_DONE
+  NEGOTIATION
+  BOOKING_PENDING
+  WON
+  LOST
+  HOLD
+}
+
+model LeadActivity {
+  id          String       @id @default(cuid())
+  leadId      String
+  userId      String
+  type        ActivityType
+  notes       String?
+  outcome     String?
+  metadata    Json?
+  scheduledAt DateTime?
+  createdAt   DateTime     @default(now())
+
+  lead        Lead         @relation(fields: [leadId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  MEETING
+  SITE_VISIT
+  WHATSAPP
+  NOTE
+  FOLLOW_UP
+  STATUS_CHANGE
+  ASSIGNMENT
+  TASK
+}
+
+model FollowUp {
+  id          String         @id @default(cuid())
+  leadId      String
+  userId      String
+  title       String
+  description String?
+  dueAt       DateTime
+  completedAt DateTime?
+  status      FollowUpStatus @default(PENDING)
+  type        ActivityType   @default(FOLLOW_UP)
+  outcome     String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  lead        Lead           @relation(fields: [leadId], references: [id])
+  user        User           @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+  @@index([userId, dueAt])
+  @@index([status, dueAt])
+}
+
+enum FollowUpStatus {
+  PENDING
+  COMPLETED
+  OVERDUE
+  SNOOZED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// CLIENTS & BOOKINGS
+// ─────────────────────────────────────────────
+
+model Client {
+  id          String    @id @default(cuid())
+  companyId   String
+  leadId      String?   @unique
+  name        String
+  email       String?
+  phone       String
+  nid         String?
+  address     String?
+  occupation  String?
+  avatar      String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  deletedAt   DateTime?
+
+  company     Company   @relation(fields: [companyId], references: [id])
+  lead        Lead?     @relation(fields: [leadId], references: [id])
+  bookings    Booking[]
+
+  @@index([companyId])
+}
+
+model Booking {
+  id              String        @id @default(cuid())
+  bookingNo       String        @unique
+  companyId       String
+  clientId        String
+  unitId          String
+  projectId       String
+  salePrice       Float
+  discount        Float         @default(0)
+  finalPrice      Float
+  bookingDate     DateTime      @default(now())
+  handoverDate    DateTime?
+  status          BookingStatus @default(ACTIVE)
+  agreementUrl    String?
+  commissionPct   Float         @default(0)
+  commissionAmt   Float         @default(0)
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+
+  client          Client        @relation(fields: [clientId], references: [id])
+  unit            Unit          @relation(fields: [unitId], references: [id])
+  project         Project       @relation(fields: [projectId], references: [id])
+  installments    Installment[]
+  payments        Payment[]
+  documents       Document[]
+
+  @@index([companyId])
+  @@index([clientId])
+}
+
+enum BookingStatus {
+  ACTIVE
+  CANCELLED
+  REFUNDED
+  HANDOVER
+}
+
+model Installment {
+  id          String              @id @default(cuid())
+  bookingId   String
+  dueDate     DateTime
+  amount      Float
+  paidAmount  Float               @default(0)
+  status      InstallmentStatus   @default(PENDING)
+  paidAt      DateTime?
+  notes       String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  booking     Booking             @relation(fields: [bookingId], references: [id])
+  payments    Payment[]
+
+  @@index([bookingId])
+}
+
+enum InstallmentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  receiptNo       String        @unique
+  bookingId       String
+  installmentId   String?
+  amount          Float
+  method          PaymentMethod @default(CASH)
+  reference       String?
+  receivedAt      DateTime      @default(now())
+  notes           String?
+  createdAt       DateTime      @default(now())
+
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+  installment     Installment?  @relation(fields: [installmentId], references: [id])
+
+  @@index([bookingId])
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  CARD
+  MOBILE_BANKING
+  ONLINE
+}
+
+// ─────────────────────────────────────────────
+// ACCOUNTS & FINANCE
+// ─────────────────────────────────────────────
+
+model Account {
+  id          String      @id @default(cuid())
+  companyId   String
+  name        String
+  code        String
+  type        AccountType
+  balance     Float       @default(0)
+  isActive    Boolean     @default(true)
+  parentId    String?
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  parent      Account?    @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children    Account[]   @relation("AccountHierarchy")
+  journalLines JournalLine[]
+
+  @@unique([companyId, code])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
+}
+
+model Journal {
+  id          String        @id @default(cuid())
+  companyId   String
+  entryNo     String        @unique
+  date        DateTime
+  description String
+  totalDebit  Float
+  totalCredit Float
+  status      JournalStatus @default(DRAFT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  lines       JournalLine[]
+}
+
+enum JournalStatus {
+  DRAFT
+  POSTED
+  VOIDED
+}
+
+model JournalLine {
+  id          String   @id @default(cuid())
+  journalId   String
+  accountId   String
+  description String?
+  debit       Float    @default(0)
+  credit      Float    @default(0)
+  createdAt   DateTime @default(now())
+
+  journal     Journal  @relation(fields: [journalId], references: [id])
+  account     Account  @relation(fields: [accountId], references: [id])
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  companyId   String
+  projectId   String?
+  category    ExpenseCategory
+  description String
+  amount      Float
+  date        DateTime
+  vendorId    String?
+  receipt     String?
+  status      ExpenseStatus   @default(PENDING)
+  approvedBy  String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  company     Company         @relation(fields: [companyId], references: [id])
+  project     Project?        @relation(fields: [projectId], references: [id])
+  vendor      Vendor?         @relation(fields: [vendorId], references: [id])
+
+  @@index([companyId])
+}
+
+enum ExpenseCategory {
+  CONSTRUCTION
+  MARKETING
+  SALARY
+  UTILITIES
+  OFFICE
+  TRAVEL
+  MAINTENANCE
+  OTHER
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+// ─────────────────────────────────────────────
+// CONSTRUCTION ERP
+// ─────────────────────────────────────────────
+
+model ProgressReport {
+  id          String   @id @default(cuid())
+  projectId   String
+  date        DateTime @default(now())
+  progressPct Float
+  description String
+  images      String[]
+  createdBy   String
+  createdAt   DateTime @default(now())
+
+  project     Project  @relation(fields: [projectId], references: [id])
+
+  @@index([projectId])
+}
+
+model WorkOrder {
+  id              String          @id @default(cuid())
+  projectId       String
+  contractorId    String?
+  title           String
+  description     String?
+  startDate       DateTime?
+  endDate         DateTime?
+  amount          Float
+  status          WorkOrderStatus @default(PENDING)
+  completionPct   Float           @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  project         Project         @relation(fields: [projectId], references: [id])
+  contractor      Vendor?         @relation(fields: [contractorId], references: [id])
+
+  @@index([projectId])
+}
+
+enum WorkOrderStatus {
+  PENDING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+model MaterialItem {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  unit        String
+  category    String
+  stock       Float    @default(0)
+  minStock    Float    @default(0)
+  unitPrice   Float    @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ─────────────────────────────────────────────
+// HR & PAYROLL
+// ─────────────────────────────────────────────
+
+model Employee {
+  id              String           @id @default(cuid())
+  companyId       String
+  userId          String?
+  empId           String
+  name            String
+  email           String?
+  phone           String?
+  department      String?
+  designation     String?
+  baseSalary      Float            @default(0)
+  joinDate        DateTime
+  endDate         DateTime?
+  status          EmployeeStatus   @default(ACTIVE)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  company         Company          @relation(fields: [companyId], references: [id])
+  attendances     Attendance[]
+  leaveRequests   LeaveRequest[]
+  payrolls        Payroll[]
+
+  @@unique([companyId, empId])
+  @@index([companyId])
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+  TERMINATED
+  ON_LEAVE
+}
+
+model Attendance {
+  id          String    @id @default(cuid())
+  employeeId  String
+  date        DateTime
+  checkIn     DateTime?
+  checkOut    DateTime?
+  status      AttendanceStatus @default(PRESENT)
+  notes       String?
+  createdAt   DateTime  @default(now())
+
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date])
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  HALF_DAY
+  LATE
+  HOLIDAY
+  ON_LEAVE
+}
+
+model LeaveRequest {
+  id          String        @id @default(cuid())
+  employeeId  String
+  type        LeaveType     @default(ANNUAL)
+  startDate   DateTime
+  endDate     DateTime
+  days        Int
+  reason      String?
+  status      LeaveStatus   @default(PENDING)
+  approvedBy  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  employee    Employee      @relation(fields: [employeeId], references: [id])
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  CASUAL
+  MATERNITY
+  PATERNITY
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Payroll {
+  id              String        @id @default(cuid())
+  employeeId      String
+  month           Int
+  year            Int
+  baseSalary      Float
+  allowances      Float         @default(0)
+  deductions      Float         @default(0)
+  bonus           Float         @default(0)
+  commission      Float         @default(0)
+  netSalary       Float
+  status          PayrollStatus @default(PENDING)
+  paidAt          DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  employee        Employee      @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, month, year])
+}
+
+enum PayrollStatus {
+  PENDING
+  PROCESSED
+  PAID
+}
+
+// ─────────────────────────────────────────────
+// VENDORS & PROCUREMENT
+// ─────────────────────────────────────────────
+
+model Vendor {
+  id          String   @id @default(cuid())
+  companyId   String
+  name        String
+  type        VendorType @default(SUPPLIER)
+  email       String?
+  phone       String?
+  address     String?
+  taxId       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  company     Company  @relation(fields: [companyId], references: [id])
+  expenses    Expense[]
+  workOrders  WorkOrder[]
+  purchaseOrders PurchaseOrder[]
+
+  @@index([companyId])
+}
+
+enum VendorType {
+  SUPPLIER
+  CONTRACTOR
+  SERVICE_PROVIDER
+  CONSULTANT
+}
+
+model PurchaseOrder {
+  id          String    @id @default(cuid())
+  poNo        String    @unique
+  vendorId    String
+  companyId   String
+  totalAmount Float
+  status      POStatus  @default(DRAFT)
+  orderDate   DateTime  @default(now())
+  deliveryDate DateTime?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  vendor      Vendor    @relation(fields: [vendorId], references: [id])
+  items       POItem[]
+}
+
+enum POStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
+
+model POItem {
+  id        String       @id @default(cuid())
+  poId      String
+  itemName  String
+  quantity  Float
+  unit      String?
+  unitPrice Float
+  total     Float
+  createdAt DateTime     @default(now())
+
+  po        PurchaseOrder @relation(fields: [poId], references: [id])
+}
+
+// ─────────────────────────────────────────────
+// PROPERTY MANAGEMENT
+// ─────────────────────────────────────────────
+
+model Tenant {
+  id          String        @id @default(cuid())
+  companyId   String
+  name        String
+  email       String?
+  phone       String
+  unitId      String?
+  leaseStart  DateTime?
+  leaseEnd    DateTime?
+  monthlyRent Float?
+  deposit     Float?
+  status      TenantStatus  @default(ACTIVE)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  maintenanceTickets MaintenanceTicket[]
+}
+
+enum TenantStatus {
+  ACTIVE
+  INACTIVE
+  EVICTED
+}
+
+model MaintenanceTicket {
+  id          String          @id @default(cuid())
+  tenantId    String?
+  companyId   String
+  title       String
+  description String?
+  priority    TicketPriority  @default(MEDIUM)
+  status      TicketStatus    @default(OPEN)
+  assignedTo  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tenant      Tenant?         @relation(fields: [tenantId], references: [id])
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+// ─────────────────────────────────────────────
+// DOCUMENTS
+// ─────────────────────────────────────────────
+
+model Document {
+  id          String       @id @default(cuid())
+  companyId   String
+  name        String
+  type        DocumentType @default(OTHER)
+  url         String
+  size        Int?
+  mimeType    String?
+  projectId   String?
+  bookingId   String?
+  uploadedBy  String
+  version     Int          @default(1)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  company     Company      @relation(fields: [companyId], references: [id])
+  project     Project?     @relation(fields: [projectId], references: [id])
+  booking     Booking?     @relation(fields: [bookingId], references: [id])
+
+  @@index([companyId])
+}
+
+enum DocumentType {
+  AGREEMENT
+  RECEIPT
+  FLOOR_PLAN
+  LAND_DEED
+  APPROVAL
+  REPORT
+  OTHER
+}
+
+// ─────────────────────────────────────────────
+// NOTIFICATIONS & AUDIT
+// ─────────────────────────────────────────────
+
+model Notification {
+  id          String           @id @default(cuid())
+  companyId   String
+  userId      String?
+  title       String
+  message     String
+  type        NotificationType @default(INFO)
+  channel     NotificationChannel @default(IN_APP)
+  isRead      Boolean          @default(false)
+  link        String?
+  createdAt   DateTime         @default(now())
+
+  company     Company          @relation(fields: [companyId], references: [id])
+  user        User?            @relation(fields: [userId], references: [id])
+
+  @@index([companyId, userId])
+}
+
+enum NotificationType {
+  INFO
+  WARNING
+  ERROR
+  SUCCESS
+  REMINDER
+}
+
+enum NotificationChannel {
+  IN_APP
+  EMAIL
+  SMS
+  WHATSAPP
+  PUSH
+}
+
+model AuditLog {
+  id          String   @id @default(cuid())
+  companyId   String
+  userId      String?
+  action      String
+  entity      String
+  entityId    String?
+  oldValue    Json?
+  newValue    Json?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  company     Company  @relation(fields: [companyId], references: [id])
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([companyId])
+  @@index([entity, entityId])
+}

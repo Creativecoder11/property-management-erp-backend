@@ -1,0 +1,130 @@
+import { PrismaService } from '../common/prisma/prisma.service';
+export declare class EmployeesService {
+    private prisma;
+    constructor(prisma: PrismaService);
+    findAll(companyId: string, query: any): Promise<{
+        data: {
+            id: string;
+            name: string;
+            email: string | null;
+            phone: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            companyId: string;
+            status: import(".prisma/client").$Enums.EmployeeStatus;
+            userId: string | null;
+            empId: string;
+            department: string | null;
+            designation: string | null;
+            baseSalary: number;
+            joinDate: Date;
+            endDate: Date | null;
+        }[];
+        total: number;
+        page: number;
+    }>;
+    findOne(id: string, companyId: string): Promise<{
+        attendances: {
+            id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.AttendanceStatus;
+            notes: string | null;
+            date: Date;
+            employeeId: string;
+            checkIn: Date | null;
+            checkOut: Date | null;
+        }[];
+        payrolls: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.PayrollStatus;
+            baseSalary: number;
+            year: number;
+            paidAt: Date | null;
+            month: number;
+            employeeId: string;
+            allowances: number;
+            deductions: number;
+            bonus: number;
+            commission: number;
+            netSalary: number;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    create(companyId: string, dto: any): Promise<{
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    update(id: string, companyId: string, dto: any): Promise<{
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    markAttendance(companyId: string, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.AttendanceStatus;
+        notes: string | null;
+        date: Date;
+        employeeId: string;
+        checkIn: Date | null;
+        checkOut: Date | null;
+    }>;
+    processPayroll(companyId: string, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import(".prisma/client").$Enums.PayrollStatus;
+        baseSalary: number;
+        year: number;
+        paidAt: Date | null;
+        month: number;
+        employeeId: string;
+        allowances: number;
+        deductions: number;
+        bonus: number;
+        commission: number;
+        netSalary: number;
+    }>;
+}

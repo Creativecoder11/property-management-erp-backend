@@ -1,0 +1,130 @@
+import { EmployeesService } from './employees.service';
+export declare class EmployeesController {
+    private service;
+    constructor(service: EmployeesService);
+    findAll(req: any, q: any): Promise<{
+        data: {
+            id: string;
+            name: string;
+            email: string | null;
+            phone: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            companyId: string;
+            status: import(".prisma/client").$Enums.EmployeeStatus;
+            userId: string | null;
+            empId: string;
+            department: string | null;
+            designation: string | null;
+            baseSalary: number;
+            joinDate: Date;
+            endDate: Date | null;
+        }[];
+        total: number;
+        page: number;
+    }>;
+    findOne(id: string, req: any): Promise<{
+        attendances: {
+            id: string;
+            createdAt: Date;
+            status: import(".prisma/client").$Enums.AttendanceStatus;
+            notes: string | null;
+            date: Date;
+            employeeId: string;
+            checkIn: Date | null;
+            checkOut: Date | null;
+        }[];
+        payrolls: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import(".prisma/client").$Enums.PayrollStatus;
+            baseSalary: number;
+            year: number;
+            paidAt: Date | null;
+            month: number;
+            employeeId: string;
+            allowances: number;
+            deductions: number;
+            bonus: number;
+            commission: number;
+            netSalary: number;
+        }[];
+    } & {
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    create(req: any, dto: any): Promise<{
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    update(id: string, req: any, dto: any): Promise<{
+        id: string;
+        name: string;
+        email: string | null;
+        phone: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        status: import(".prisma/client").$Enums.EmployeeStatus;
+        userId: string | null;
+        empId: string;
+        department: string | null;
+        designation: string | null;
+        baseSalary: number;
+        joinDate: Date;
+        endDate: Date | null;
+    }>;
+    attendance(req: any, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        status: import(".prisma/client").$Enums.AttendanceStatus;
+        notes: string | null;
+        date: Date;
+        employeeId: string;
+        checkIn: Date | null;
+        checkOut: Date | null;
+    }>;
+    payroll(req: any, dto: any): Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import(".prisma/client").$Enums.PayrollStatus;
+        baseSalary: number;
+        year: number;
+        paidAt: Date | null;
+        month: number;
+        employeeId: string;
+        allowances: number;
+        deductions: number;
+        bonus: number;
+        commission: number;
+        netSalary: number;
+    }>;
+}
